@@ -1,0 +1,66 @@
+---
+title: "Course Project Write-Up"
+author: "Wayward-Economist"
+date: "Sunday, August 24, 2014"
+output: html_document
+---
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(knitr)
+read_chunk('..//programs//course_project.R')
+```
+
+
+### Data Preprocessing
+
+First, begin by reading in the data. There are a large number of sparce columns in the data. Note that whenever the "new window" variable is equal to "yes" there are values for all of the columns. However, examining the test data indicate that the prediction is done based only on observations where the "new window" is equal to no. Therefore, all sparce columns are eliminated.
+
+```{r}
+full.data  <- read.csv("..//data//pml-training.csv")
+testing    <- read.csv("..//data//pml-testing.csv")
+<<process_data>>
+```
+
+Throughout this analysis, hold-out cross validation will be used (not k-fold cross validation). The validation set is created below.
+
+```{r, message=FALSE, warning=FALSE}
+library(caret)
+<<create_validation_set>>
+```
+
+### K-means classification
+
+The first learning algorithm used is the K-means algorithm. The function knn() allows for different levels of k to be specified; five different levels of k are analyzed and tested on the validation set. For each level of k, the out-of-sample classification error is calculated. 
+
+```{r, cache = TRUE}
+library(class)
+<<k-means_classification>>
+```
+
+Out of sample error is minimized for k = 1, this indicates that the decision boundry is highly nonlinear. Proceeding forward, this implies that linear models will likely prove to be more inaccurate. Additionally, out-of-sample classification error is extermely small even using a very simple classification algorithm. A more sophisticated algorthim should be able to identify virtually every observation. 
+
+### Support Vector Machines
+
+The second algorithm applied is a support vector machine; this is done because the SVM with a linear kernel can approximate logistic regression well. But the SVM with nonlinear kernels is likely to be much better given that the results of the knn classifer suggest a highly nonlinear decision boundry. This will be a reasonable test of the nonlinear decision boundry. 
+
+As before, the out-of-sample error rate for various svm models trained on the data. 
+
+```{r, cache=TRUE}
+library(e1071)
+<<support_vector_machine>>
+```
+
+As expected, after the initial knn results, the linear decision boundry (as shown in the firm svm), preforms worst of all. The polynomial and radial kernels both preform better. However, the out-of-sample classification error is substantially higher than the knn classifier. 
+
+### Tree based classification
+
+Next random forrest classifiers are trained on this data. These algorithms are typically the most accurate for prediction purposes. Two different models are trained: a bagging tree and a random forest.
+
+```{r, cache=TRUE}
+library(randomForest)
+library(gbm)
+
+<<random_trees>>
+```
+
+Both these models preform well; but the random model preforms extremely well. The out-of-sampple classification error is less than 0.05% indicating only one error out of every 200 predictions. This is sufficiently percise in order to estimate the 20 testing cases. 
